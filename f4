@@ -1,0 +1,90 @@
+import numpy as np
+import pandas as pd
+import tkinter as tk
+from tkinter import messagebox
+from sklearn.metrics import accuracy_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+
+# Load your dataset
+df = pd.read_csv('kidney_stone_data.csv')
+df = df.drop('id', axis=1)  # Drop the 'id' column
+
+# Prepare the data
+x = df.drop(['target'], axis=1)  # Features
+y = df['target']  # Target variable
+
+# Split the data into training and testing sets
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+
+# Train the models
+lr = LogisticRegression().fit(x_train, y_train)
+rf = RandomForestClassifier().fit(x_train, y_train)
+cv = SVC().fit(x_train, y_train)
+dg = DecisionTreeClassifier().fit(x_train, y_train)
+
+# Function to make predictions
+def predict():
+    try:
+        gravity = float(entry_gravity.get())
+        ph = float(entry_ph.get())
+        osmo = float(entry_osmo.get())
+        cond = float(entry_cond.get())
+        urea = float(entry_urea.get())
+        calc = float(entry_calc.get())
+
+        # Create a DataFrame with the user input
+        user_data = pd.DataFrame({
+            'gravity': [gravity],
+            'ph': [ph],
+            'osmo': [osmo],
+            'cond': [cond],
+            'urea': [urea],
+            'calc': [calc]
+        })
+        
+        # Make predictions
+        user_result1 = lr.predict(user_data)[0]
+        user_result2 = rf.predict(user_data)[0]
+        user_result3 = cv.predict(user_data)[0]
+        user_result4 = dg.predict(user_data)[0]
+        
+        # Display results
+        results = [
+            ("Logistic Regression", user_result1),
+            ("Random Forest", user_result2),
+            ("Support Vector Machine", user_result3),
+            ("Decision Tree", user_result4)
+        ]
+        
+        result_message = "\n".join([f"{name}: {'Kidney stone' if result == 1 else 'Kidney normal'}" for name, result in results])
+        messagebox.showinfo("Prediction Results", result_message)
+    except ValueError:
+        messagebox.showerror("Input Error", "Please enter valid numbers for all fields.")
+
+# Create the GUI
+root = tk.Tk()
+root.title("Kidney Stone Prediction")
+
+# Define labels and input fields
+labels = ["Gravity", "pH", "Osmolarity", "Conductivity", "Urea", "Calcium"]
+entries = []
+
+for i, label in enumerate(labels):
+    tk.Label(root, text=label).grid(row=i, column=0, padx=10, pady=10)
+    entry = tk.Entry(root)
+    entry.grid(row=i, column=1, padx=10, pady=10)
+    entries.append(entry)
+
+# Assign entries to variables
+entry_gravity, entry_ph, entry_osmo, entry_cond, entry_urea, entry_calc = entries
+
+# Define the predict button
+predict_button = tk.Button(root, text="Predict", command=predict)
+predict_button.grid(row=len(labels), column=0, columnspan=2, pady=20)
+
+# Start the GUI event loop
+root.mainloop()
